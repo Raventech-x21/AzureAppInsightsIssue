@@ -27,8 +27,8 @@ namespace TimerFunctionApp
             for (int i = 1; i <= 100; i++)
             {
                 _logger.LogInformation($"[{correlationId}] Logging information message #{i}");
-                _logger.LogWarning($"[{correlationId}] Logging information message #{i}");
-                _logger.LogError($"[{correlationId}] Logging information message #{i}");
+                _logger.LogWarning($"[{correlationId}] Logging warning message #{i}");
+                _logger.LogError($"[{correlationId}] Logging error message #{i}");
             }
         }
     }
