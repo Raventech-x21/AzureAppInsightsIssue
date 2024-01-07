@@ -9,6 +9,7 @@ namespace TimerFunctionApp
     {
         private readonly ILogger _logger;
         private const int NumberOfMessages = 1000;
+        private readonly HttpClient _httpClient = new();
 
         public Function1(ILoggerFactory loggerFactory)
         {
@@ -30,8 +31,13 @@ namespace TimerFunctionApp
             for (int i = 1; i <= NumberOfMessages; i++)
             {
                 _logger.LogInformation($"[{correlationId}] Logging information message #{i}");
-                _logger.LogWarning($"[{correlationId}] Logging warning message #{i}");
-                _logger.LogError($"[{correlationId}] Logging error message #{i}");
+                //_logger.LogWarning($"[{correlationId}] Logging warning message #{i}");
+                //_logger.LogError($"[{correlationId}] Logging error message #{i}");
+
+                var webApiResponse = await _httpClient.GetAsync($"https://intellspatialtestloggingwebapi.azurewebsites.net/log?correlationid={correlationId}");
+
+                if (!webApiResponse.IsSuccessStatusCode)
+                    _logger.LogCritical($"Got response {webApiResponse.StatusCode} from web api");
             }
 
             _logger.LogInformation($"Waiting ten minutes before checking logs...");
@@ -45,7 +51,7 @@ namespace TimerFunctionApp
             var client = new LogsQueryClient(credential);
             var timeRange = new QueryTimeRange(TimeSpan.FromHours(1));
 
-            var kqlQuery = $"AppTraces | where OperationName == 'Function1' and Message startswith '[{correlationId}]' and SeverityLevel == 1 | count";
+            var kqlQuery = $"AppTraces | where Message startswith '[{correlationId}]' and SeverityLevel == 1 | count";
 
             var response = await client.QueryWorkspaceAsync(workspaceId, kqlQuery, timeRange);
 
@@ -53,8 +59,7 @@ namespace TimerFunctionApp
 
             _logger.LogInformation($"Count of messages: {messageCount}");
 
-            // TODO : change this back to != NumberOfMessages when i've tested the alert
-            if (messageCount != 500)
+            if (messageCount != (NumberOfMessages * 2))
                 _logger.LogCritical($"Did not log {NumberOfMessages} messages");
         }
     }
